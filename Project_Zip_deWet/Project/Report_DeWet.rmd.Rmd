@@ -1,0 +1,356 @@
+---
+title: "Data Analytics Final Project"
+author: "Juan de Wet"
+output:
+  html_document:
+    toc: true
+    df_print: paged
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+
+# Libraries
+
+```{r}
+# Installing Required Libraries
+
+library(tidyverse)
+library(dplyr)
+
+```
+# Summary
+
+> Whenever doing something dangerous such as driving, flying, or even taking a ride on any public transportation such as trains there is a certain level of assumed risk. This assumption of risk is the legal amount of risk that you are expected to take as a user of certain services. This is saying that when you do something like go-karting, and then crash the kart injuring yourself, that is your fault. When you choose to get on the kart you take on a certain level of assumed risks. That same assumed risk is often overlooked for roller coasters. In reality steel roller coasters are the most dangerous of all amusement park rides, and this ride, amongst others like it, should still be handled like a dangerous ride. That means following very strictly any rules that may be given and practicing personal safety practices. 
+  While amusement parks do pose a danger that may be unknown to most, amusement parks are not fundamentally dangerous. This doesn't mean that you shouldn't go to amusement parks or that you shouldn't ever ride a roller coaster during the month of June. However, when going to amusement parks one should always stay aware and alert when riding any kind of ride. This is similar to the commonly understood idea of being extra cautious when traveling during certain holidays. During certain holidays there are more cars on the road making the likelihood of small accidents happening much higher. This same extra level of caution should always be taken on certain rides like steel coasters and especially during the summer months. This little extra step of caution helps to keep yourself and everyone around you safe and can protect your liability in any kind of incident. 
+
+
+# Purpose 
+
+> The purpose of this study is to try and determine if there are any amusement parks or rides in the United States that could potentially be dangerous. This could be anything from one location with a strangely high number of injuries to a certain ride vehicle that has a pattern of injuring users. Any other patterns that help to provide any useful information on the amusement parks is also very important. Any of this could help show an array of information such as best or worst times to visit, best ages to visit amusement parks, and even if accidents on amusement park rides are just a matter of chance. 
+
+
+# Data 
+
+>In an attempt to stay with the project guidelines I did initially seek out a data set that was big enough and informative enough to do a project based on that data. The safer parks injury data set that I found certainly has a lot of information and plenty of data. This data is formatted the way that it would be required to be tidy. This made it so that pivot(longer) was not required for formatting the data. However, the data is riddled with different na values in multiple columns of the data. This is done using na.omit() and na.rm = TRUE in multiple code chunks. I would have to use na.omit in some scenarios where I would make a graph and the graph would have certain bars missing or data that looked very skewed. Using na.omit in these scenarios would help by removing the rows with na values making the data clear and accurate. This also helped with some graphs to reduce unnecessary points on the graph. Often throughout the project I would also need to us na.rm = TRUE often while using a sum or mean function. This was helpful since almost every column had some missing value, and using the sum or mean function would also just give na for an output. Using the na.rm function would ignore any na values whenever calculating something. Without these two functions almost every graph in the project would just give na for an output. A few variables were also created from other variables within the data to help get a closer or better look at some areas. One of these cases was needing to obtain the months from the date column. To obtain just the month variable I had to reformat the date from month, day, and year to just year. A description of this variable along with every other variable used in the data for analysis is in a dictionary just after the overall dimensions of the safeparks data file. This dictionary has every variable used during the project with a very short description of what the variable holds and its type of units.
+
+
+```{r}
+# Renaming data file to help keep the data clean and clear. 
+safeparks_dataset <- read.csv("C:/Users/dewet/OneDrive - The Ohio State University/Documents/Foundations_DA/Saferparks-dataset-2017-v4 (1).csv")
+
+```
+
+> The overall dimensions of the data
+
+```{r}
+
+dim(safeparks_dataset)
+
+```
+
+# A dictionary with all features and data set along side a breif overlay. 
+
+```{r}
+safepark_dictionary <- data.frame(
+  Variable = c("acc_id", "acc_date", "acc_state", "acc_city", "device_type", "num_injured", "total_injured", "state_injuries", "five_state_injuries", "city_injuries", "five_city_injuries", "top_citites_injuries", "age_youngest", "device_injuries"),
+  Description = c(
+    "Exact Accident identifier",
+    "Date of the accident",
+    "The State where the accident occurred",
+    "The City where the accident occured", 
+    "The type of device involved",
+    "Number of people injured in the accident",
+    "The total number of people that were injured",
+    "The total number of injuries for each state",
+    "The five states with the most injuries",
+    "Every city in the top five states for injuries", 
+    "The five cities with the most injuries from the five states with the most injuries",
+    "The ten cities with the most injuries ",
+    "Age of the youngest individual involved", 
+    "The type of amusement park device involved"
+  ),
+  DataType = c("Numerical", "Categorical", "Categorical", "categorical", "categorical", "Numerical", "Numerical", "Numerical", "Numerical", "Categorical", "categorical", "categorical", "Numerical", "categorical"),
+  Units = c(
+    "ID Number",     
+    "Date",          
+    "State Code",   
+    "City Name",     
+    "Device Type",   
+    "Number of People", 
+    "Number of People", 
+    "Number of Injuries", 
+    "Number of Injuries", 
+    "City Name",   
+    "City Name",
+    "City Name",
+    "Years",         
+    "Device Type" 
+  )
+)
+print(safepark_dictionary)
+```
+
+# Exploratory Data Analysis
+
+# Total Injured By Device Type
+
+```{r}
+
+device_injuries <- safeparks_dataset %>%
+  group_by(device_type) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE)) %>%
+  filter(total_injured > 100)
+
+ggplot(device_injuries, aes(x = reorder(device_type, -total_injured), y = total_injured, fill = total_injured)) +
+  geom_bar(stat = "identity", width = 0.7) +  
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +  
+  theme(axis.text.x = element_text(angle = 65, hjust = 1)) +
+  labs(title = "Total Number Injured by Device Type (Over 100 Injuries)",
+       x = "Device Type",
+       y = "Total Injured",
+       fill = "Total Injured")
+```
+> Above is a bar chart with every device type involved in an accident with over 100 injuries. The variable used for the x axis is device type and total injured is used for the y axis. Every device has a bar above it representing the total number of injured people related to that device. The rides represented with a darker blue on the left are the rides with the most injuries and the injuries become fewer as you go to the right and the bars become lighter. Looking at the higher bars in the data set you can quickly see that the three devices with the most injuries is steel roller coasters, trampoline courts, and go-karts. All three of these make sense that they would be the highest. Steel coasters have a reputation for being the biggest and fastest rides available. Trampoline parks are also a common place to get injured since especially small injuries like rug burns, whiplash, and sprains so easily occurred during such highly physical activities. Go-karts are typically designed to be made in a fashion that allows users to be safe but also allows users to bump into each other and crash themselves. Go-karts are also another version of a practice drivers course, but no drivers licence required and the cars don't even have speedometers let alone cops to regulate everyone's driving and speed. 
+
+# Number of Injuries by State
+
+```{r}
+state_injuries <- safeparks_dataset %>%
+  group_by(acc_state) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE)) %>%
+  filter(total_injured >= 1) %>%
+  arrange(desc(total_injured))
+
+ggplot(state_injuries, aes(x = reorder(acc_state, -total_injured), y = total_injured, fill = total_injured)) +
+  geom_bar(stat = "identity", width = 0.7) + 
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen") +  
+  theme(axis.text.x = element_text(angle = 65, hjust = 1)) +
+  labs(title = "Total Number Injured by State",
+       x = "State",
+       y = "Total Injured",
+       fill = "Total Injured")
+```
+
+> In the chart above is a bar chart of every state with how many people have been injured in that state. The state of the incident is used for the x axis and the total injured within that state is used for the y axis. The chart is organized with the highest states to the left in dark green, and as the amount of injuries decrease to the right the green bar becomes lighter. This graph helps to eliminate any states that are not in need of concern for amusement park incidents  mainly due to not having any large amusement parks in the state. 
+
+# States With the Most Injuries
+
+```{r}
+five_state_injuries <- safeparks_dataset %>%
+  group_by(acc_state) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE)) %>%
+  filter(total_injured >= 500) %>%
+  arrange(desc(total_injured))
+
+ggplot(five_state_injuries, aes(x = reorder(acc_state, -total_injured), y = total_injured, fill = total_injured)) +
+  geom_bar(stat = "identity", width = 0.7) + 
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen") +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Total Number Injured by State",
+       x = "State",
+       y = "Total Injured",
+       fill = "Total Injured")
+```
+
+> Above is a narrowed version of the previous chart used to display the total injuries in every state. This bar chart shows only the five highest states in number of injuries using the same description and variables as the previous graph. Looking at just the top five states it is clear that certain states are much higher than the rest of the states with these five being the only states with over 500 injuries out of 50 states. California having by far the highest number of injuries compared to any state. 
+
+# City's Total Injuries 
+
+```{r}
+city_injuries <- safeparks_dataset %>%
+  filter(acc_state %in% c("CA", "PA", "FL", "TX", "NJ")) %>%  
+mutate(acc_city = paste(str_to_title(acc_city), acc_state, sep = ", ")) %>%  group_by(acc_city) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE)) %>%
+  filter(total_injured >= 50) %>%
+  arrange(desc(total_injured))
+
+ggplot(city_injuries, aes(x = reorder(acc_city, -total_injured), y = total_injured, fill = total_injured)) +
+  geom_bar(stat = "identity", width = 0.7) +  
+  scale_fill_gradient(low = "lightcoral", high = "darkred") +  
+  theme(axis.text.x = element_text(angle = 65, hjust = 1)) +
+  labs(title = "Total Number Injured by City (Selected States)",
+       x = "City",
+       y = "Total Injured",
+       fill = "Total Injured")
+```
+
+> Above is a graph of every city within the top five states that had over 50 amusement park related injuries. To create the x axis the states and cities were used. For the y axis just total injury was used again. This data did show what cities have some kind of amusement park attraction or ride that had a fairly high number of guests injured. This helps show what cities may have plausible reasons for concern. 
+
+# Cities With Most Injuries
+
+```{r}
+five_city_injuries <- safeparks_dataset %>%
+  filter(acc_city %in% c("Anaheim", "Buena Park", "Hershey", "Allentown", "ORLANDO")) %>%
+  mutate(acc_city = case_when(
+    acc_city == "Anaheim" ~ "Anaheim, CA",
+    acc_city == "Buena Park" ~ "Buena Park, CA",
+    acc_city == "Hershey" ~ "Hershey, PA",
+    acc_city == "Allentown" ~ "Allentown, PA",
+    acc_city == "ORLANDO" ~ "Orlando, FL",
+    TRUE ~ acc_city)) %>%
+  group_by(acc_city) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE)) %>%
+  arrange(desc(total_injured))
+
+ggplot(five_city_injuries, aes(x = reorder(acc_city, -total_injured), y = total_injured, fill = total_injured)) +
+  geom_bar(stat = "identity", width = 0.7) +  
+  scale_fill_gradient(low = "lightcoral", high = "darkred") +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Total Number Injured by Selected Cities",
+       x = "City",
+       y = "Total Injured",
+       fill = "Total Injured")
+```
+
+> Taking a closer look into the cities with the most injuries I made the bar chart above to show the total injuries of the top five highest cities from the previous chart. This shows a few cities that most people would recognize these city names based on well known places there to visit. Anaheim has the most injuries out of all the cities and even has roughly more injuries than the remaining top five cities combined. This is because of DisneyLand being located in Anaheim. Since disney has such a large array of steel coasters, the most dangerous ride  vehicle of amusement park rides, it makes sense that this heavily traveled to park would have a lot of injuries. However, taking into account that Orlando is the home of Disney World, the younger but bigger brother of DisneyLand, it could be cause for concern that Aneheim has such a higher rate of injuries. 
+
+# Ten Cities With Most Injuries Overall
+
+```{r}
+top_cities_injuries <- safeparks_dataset %>%
+  mutate(acc_city = paste(str_to_title(acc_city), acc_state, sep = ", ")) %>%
+  group_by(acc_city) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE)) %>%
+  arrange(desc(total_injured)) %>%  
+  slice_head(n = 10)  
+
+ggplot(top_cities_injuries, aes(x = reorder(acc_city, -total_injured), y = total_injured, fill = total_injured)) +
+  geom_col() +
+  scale_fill_gradient(low = "lightcoral", high = "darkred") +  
+  labs(title = "Top 10 Cities by Total Injuries",
+       x = "City",
+       y = "Total Injuries",
+       fill = "Total Injured") +  
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+> Very similar to the previous chart of the top five cities for injuries from the top five states. This chart above is the top ten cities from all of the cities in total injuries. The reason for this is to make sure that the top cities in injuries are not only in the states with the highest injuries. To test this I created the same chart using the same variables for the previous chart once again. For this chart it was not filtered from just the top five states and this chart shows the top ten cities to show how much the rankings could change once the parameters were widened. Despite changing the array of cities to filter from just five to fifty only one city from the previous top five cities moved one space. This is because the city of Oklahoma City is the overall fifth highest city in amusement park injuries. In the previous chart Orlando was the fifth city. This made sense since Orlando has the world's most visited theme park. Unaware of any major theme parks in Oklahoma City and it being the only city within the top five cities no having an immediately known theme park may be a good reason to look further into Oklahoma City. 
+
+
+# Total Injuries for Every Month 
+
+```{r}
+
+safeparks_dataset$acc_month <- format(as.Date(safeparks_dataset$acc_date, format = "%m/%d/%Y"), "%m")
+
+
+monthly_injuries <- safeparks_dataset %>%
+  group_by(acc_month) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE))
+
+ggplot(monthly_injuries, aes(x = acc_month, y = total_injured, fill = total_injured)) +
+  geom_col() +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +  
+  labs(title = "Total Number of Injuries by Month",
+       x = "Month",
+       y = "Total Injuries",
+       fill = "Total Injured") +  
+  scale_x_discrete(labels = month.abb) +  
+  theme_minimal()
+```
+
+> Above is a bar chart of the total injuries from the data based on the month it occurred. Each month holds every injury that occurred during that month over the 7 year time span of the data. The x axis is the months of the year derived from the date column in the data set. To make the graph more readable and to see seasonal patterns more clearly I had to change the month labels from numbers one through twelve to month abbreviations. The y axis was derived from the date column in the data set by formatting a new category for months by taking the month value from each date. This graph was then set to have the highest months be a dark blue and the months with lower injuries be light blue. This makes it so that by looking at the graph you can see a large dark area right in the middle of the chart. This points out the months June, July, and August. And anyone who watched Phineas and Ferb as a child will remember that there are 104 days of summer vacation and they are during the same three months that are the highest in injuries out of the year. Assuming that summer vacation in America is the cause for this spike would make sense and confirm what the data is suggesting. The slight shift from when some schools begin and end their breaks would also explain why the months May and September are the fourth and fifth highest months giving the data that build towards the middle.
+
+
+```{r}
+filtered_data <- safeparks_dataset %>%
+  group_by(device_type) %>%
+  summarise(total_injured = sum(num_injured, na.rm = TRUE)) %>%
+  filter(total_injured > 100) %>%
+  inner_join(safeparks_dataset, by = "device_type")  
+
+ggplot(na.omit(filtered_data[, c("device_type", "age_youngest")]), aes(x = device_type, y = age_youngest)) +
+  geom_boxplot(fill = "lightgreen", color = "darkgreen", outlier.color = "red", outlier.shape = 19) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.margin = margin(1, 1, 2, 1, "cm")
+  ) +
+  labs(
+    title = "Age of Youngest Injured by Device Type (Over 100 Injuries)",
+    x = "Device Type",
+    y = "Age of Youngest Injured"
+  )
+```
+
+> In the box plot above is the age of the youngest injured party for every device type with over 100 injuries. This list demonstrates the average ages of those who were injured on that device type. This required the age of youngest injured for the y axis and then the total injuries and device types were used for the x axis. Looking through the graph you can get a very good idea of the variety and spread of ages that tend to ride certain rides. When you look at the rides like the aquatic play area, coasters for kids and family, and inflatable bouncer the average age is very low with even the age 30 being an outlier. However, on rides such as indoor skydiving over 75% of the party injured is over the age of thirty. This implies that rides such as indoor skydiving do not allow small children to participate. 
+
+
+# Histogram of Youngest Injured By Year
+
+```{r}
+safeparks_dataset$acc_date <- as.Date(safeparks_dataset$acc_date, format = "%m/%d/%Y")
+safeparks_dataset$acc_year <- as.numeric(format(safeparks_dataset$acc_date, "%Y"))
+
+mean_age_per_year <- safeparks_dataset %>%
+  group_by(acc_year) %>%
+  summarise(mean_youngest_age = mean(age_youngest, na.rm = TRUE))
+
+ggplot(na.omit(safeparks_dataset), aes(x = acc_year, y = age_youngest)) +
+  geom_point(alpha = 0.6, color = "red") +
+  geom_line(data = mean_age_per_year, aes(x = acc_year, y = mean_youngest_age), color = "darkblue", size = 1.2) +  
+  geom_point(data = mean_age_per_year, aes(x = acc_year, y = mean_youngest_age), color = "lightblue", size = 2) +  
+  labs(title = "Age of Youngest Injured by Year of Accident",
+       x = "Year",
+       y = "Age of Youngest Injured (mean)",
+       subtitle = "Blue line represents the mean age of the youngest injured each year") +
+  theme_minimal()
+```
+
+> The histogram above represents the mean age of the youngest person injured in every accident. The data is spread over the seven year time span of the data using the dates for the x axis and the mean of the age value for the y axis. However, only using these variables in the data created a graph that was very hard to read and an eyesore. After some testing a few points were added to adjust the graph for certain years that had outliers in groups suggesting possible patterns or trends. Placing this over the data set shows that these outliers were limited to two specific years and do not seem to be relevant to the age. The rest of the mean age of the data seems to be fairly consistent without any cause for concern. 
+
+# Whisker Plot of Ages by number injured.  
+
+```{r}
+
+ggplot(na.omit(safeparks_dataset[, c("num_injured", "age_youngest")]), aes(x = as.factor(num_injured), y = age_youngest)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red", outlier.shape = 19) +
+  labs(title = "Box-and-Whisker Plot: Age vs. Number Injured",
+       x = "Number Injured",
+       y = "Age of Youngest Injured") +
+  theme_minimal()
+
+```
+
+> Above is a whisker plot created to help further analyze the age of the youngest injured member. For this graph the number of guests injured in each accident is used for the x axis. For each column of the x axis is a whisker plot to show the spread of the age across parties.The age of the youngest group member is then used for the y axis. Across the parties you can still see a rough line of the average ages for the different groups. 
+
+# Results
+
+> Given that the data provided did not provide company names, exact amusement park information, or amusement park ride qualifications to be collected into the data set. This made it a little more challenging to determine if the statistics I discover and collect are accurate given the vague variables in the data.
+  To start I began with very general graphs. These graphs included the number of injuries by device type involved, injuries based on state, and even the youngest individual from each group injured compared to the device type involved. The data involving device types showed that the most danger rides were steel coasters, trampoline courts, and go-karting. To look further into this I wanted to see if locations with these type of locations were really where the most injuries occurred. Not having any descriptions from the data clarifying things such as the theme park or exact company meant that location was the next best place to start. Beginning with the number of injuries based on states my initial finding seemed to line up with the device injuries. However, to be more certain I then went to cities with the most injuries revealing every city on the list containing at least one or more large establishments of the three most dangerous ride vehicles. Given this data lining up and seemingly accurate, I began to test a few different graphs for comparing the youngest age of the injured member of each group injured. Concerns over the useability of this variable quickly rose. The only variable for participants ages given is the age of the youngest person from the group that was injured. This means that if five people were injured from the same party and ride then they could all be collected in the same observation, but only whoever the youngest patron is has their age recorded. This means that right from the beginning the data will be slightly skewed to have the average age of injuries seem younger than the actual values. However, testing this data as a whisker plot with the age for the y axis and the device type involved you can still easily see the correlation of younger injured members typically being much more common on kid rides and family style rides. This makes more sense though given that it would be the youngest person recorded from the group, but the same can be seen in rides such as indoor skydiving or other similar rides where you might expect kids to either not be able to ride the ride given height or age restrictions. Despite looking more into this there did not seem to be any more meaningful information from the age of those injured. Lastly, I compared the number of injuries to the total injuries by months to determine any seasonality. This clearly showed a much higher rate of injuries during the summer months of the year. This pattern made sense initially given the assumption that more people will lead to more injuries. This occurs because all of these rides do have a very small level of danger to them by design. That is why theme parks are a common place for thrill seekers. This is generally allowed and still possible under heavy safety regulations because of the nature of the rides. When you have a ride that goes over 200 km/hr in less than five seconds you have to assume certain risks on these rides. That risk is extremely small given nothing goes wrong, but when thousands of people ride the same very safe and very extreme ride it is a given that some injuries may occur. A recent article from the law firm Holman & Schiavone states, "It may come as no surprise that a majority of ride injuries occur during the summer months, when attendance at fairs and amusement parks is at its highest. According to the study, more than two out of three ride-related emergency room visits in the United States occurs between the months of May and September." This statement lines up with the spread of our data from injuries by months over the seven year time span. 
+
+# Conclussion 
+
+>   Based on my findings from this data I can conclude that amusement parks are more dangerous for certain rides and months, but never a guarantee. Amusement ps are designed to either scare, thrill, or entertain guests. This requires different companies attempting to always find something better than what the current competition has. These innovations often mean pushing the limit of safety as far as possible. That means that the newer and supposedly better a ride is then there is a very small statistic along with that ride for the small chance of you getting injured. This chance of being injured is higher for rides such as steel roller coasters, trampoline courts, and go karting than other vehicles. There is also a higher chance of someone being injured in the summer over other months. This is not because either of these variables hold a true danger, but just that your risk of injury is higher. This leads to my main limitation from this data. To do more extension research in the future on a topic such as this would require data that includes the actual companies and amusement parks that each of these injuries go along with. This would allow us to look much closer at what exact parks and rides seem to be outliers. This is why it is hard to conclude why the city Anaheim seems to be so much more dangerous than every other city. The city of Anaheim, CA, was the biggest outlier in the data. This presents some concern for the city and any amusement parks within the city. Having a wide variety of amusement parks and attractions in the city makes it very hard to say if the amusement parks in that city are much higher risk rides of causing injuries, or if it is just a very active and full city of amusement parks. My final conclusion of safety concerning Anaheim is that the amusement parks should be looked at as more dangerous and should have a lot of caution when going on an amusement park ride in that city. This is due to the fact that Orlando is one of the most traveled to tourist cities in the world in terms of amusement parks despite having an extremely lower injuries total. Suggesting that the city of Anaheim in California should be enjoyed with some caution.
+
+
+# References 
+
+> https://www.kdh-law.com/articles/not-just-fun-and-games-study-exposes-children-s-ride-injuries/
+
+> "It may come as no surprise that a majority of ride injuries occur during the summer months, when attendance at fairs and amusement parks is at its highest. According to the study, more than two out of three ride-related emergency room visits in the United States occurs between the months of May and September."
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
